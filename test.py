@@ -80,7 +80,7 @@ checkpoint = torch.load('model_checkpoint.pth')
 model = UNet()
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
-train_accuracies = checkpoint['train_accuracy'] # aici mi-am salvat acuratetea pentru ficare epoca in modelul final
+train_accuracies = checkpoint['train_accuracy']
 print("train accuracies on epochs",train_accuracies)
 pixel_accuracies = []
 jaccard_indexes = []
@@ -90,7 +90,6 @@ test_accuracies = []
 total_correct_test = 0
 total_test_samples = 0
 
-# Aici definim lista 'batches' după ce am calculat rezultatele pentru fiecare batch
 batches = range(1, len(pixel_accuracies) + 1)
 
 with torch.no_grad():
@@ -103,10 +102,8 @@ with torch.no_grad():
         jaccard_indexes.append(jaccard_index(predicted, labels))
         dice_coefficients.append(dice_coefficient(predicted, labels))
 
-        # Calculăm și stocăm rezultatele pentru fiecare batch în 'batches'
         batches = range(1, len(pixel_accuracies) + 1)
 
-# După ce am terminat de calculat rezultatele pentru fiecare batch, putem trasa graficul
 plt.plot(batches, pixel_accuracies, label='Pixel Accuracy')
 plt.plot(batches, jaccard_indexes, label='Jaccard Index')
 plt.plot(batches, dice_coefficients, label='Dice Coefficient')

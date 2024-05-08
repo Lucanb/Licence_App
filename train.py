@@ -10,12 +10,30 @@ from torchvision.utils import make_grid
 import numpy as np
 from PIL import Image
 import os
+from imageAjust import CustomPixelManipulation
+from watershed import  watershed_segmentation
 
-TRAIN_SIZE = 7000
+TRAIN_SIZE = 7000   
 TEST_SIZE = 3000
 BATCH_SIZE = 64
-EPOCHS = 50
+EPOCHS = 1
 BATCHES_PER_EPOCH = 10
+
+# Now integrate this into the existing transformation pipeline
+transform_augmented = transforms.Compose([
+    transforms.Resize((128, 128)),
+    CustomPixelManipulation(50),  # Apply custom pixel manipulation
+    transforms.ToTensor(),  # Convert the modified image to a tensor
+])
+
+# transform_augmented = transforms.Compose([
+#     transforms.Resize((128, 128)),
+#     transforms.RandomHorizontalFlip(),  # Randomly flip images horizontally
+#     transforms.RandomRotation(10),       # Random rotation of ±10 degrees
+#     transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Random color jitter
+#     transforms.ToTensor(),
+# ])
+
 
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
@@ -43,7 +61,7 @@ dataset_ids = random.sample(range(24306, 34321), TRAIN_SIZE + TEST_SIZE)
 train_dataset_ids = dataset_ids[:TRAIN_SIZE]
 test_dataset_ids = dataset_ids[TRAIN_SIZE:]
 
-train_dataset = CustomDataset(train_dataset_ids, transform=transform)
+train_dataset = CustomDataset(train_dataset_ids, transform=transform_augmented)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 test_dataset = CustomDataset(test_dataset_ids, transform=transform)
