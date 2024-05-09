@@ -16,7 +16,7 @@ from watershed import  watershed_segmentation
 TRAIN_SIZE = 7000   
 TEST_SIZE = 3000
 BATCH_SIZE = 64
-EPOCHS = 1
+EPOCHS = 50
 BATCHES_PER_EPOCH = 10
 
 # Now integrate this into the existing transformation pipeline
@@ -49,7 +49,7 @@ class CustomDataset(Dataset):
         return len(self.ids)
 
     def __getitem__(self, idx):
-        image = Image.open('dataset/images/ISIC_00{}.jpg'.format(self.ids[idx]))
+        image = Image.open('images/ISIC_00{}.jpg'.format(self.ids[idx]))
         mask = Image.open('dataset/masks/img/ISIC_00{}_segmentation.png'.format(self.ids[idx]))
         if self.transform:
             image = self.transform(image)
@@ -70,8 +70,22 @@ test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
+        # self.encoder = nn.Sequential(
+        #     nn.Conv2d(3, 64, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.MaxPool2d(kernel_size=2, stride=2)
+        # )
+        # self.decoder = nn.Sequential(
+        #     nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 1, kernel_size=3, padding=1),
+        #     nn.Sigmoid()
+        # )
+
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),

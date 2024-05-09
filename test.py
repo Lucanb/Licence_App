@@ -27,8 +27,22 @@ def dice_coefficient(predicted, target):
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
+        # self.encoder = nn.Sequential(
+        #     nn.Conv2d(3, 64, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.MaxPool2d(kernel_size=2, stride=2)
+        # )
+        # self.decoder = nn.Sequential(
+        #     nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 1, kernel_size=3, padding=1),
+        #     nn.Sigmoid()
+        # )
+
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
@@ -60,7 +74,7 @@ class CustomDataset(Dataset):
         return len(self.ids)
 
     def __getitem__(self, idx):
-        image = Image.open('dataset/images/ISIC_00{}.jpg'.format(self.ids[idx]))
+        image = Image.open('dataset/images/ISIC_00{}.jpg'.format(self.ids[idx])).convert('L') #convert ca sa le facem grayscale
         mask = Image.open('dataset/masks/img/ISIC_00{}_segmentation.png'.format(self.ids[idx]))
         if self.transform:
             image = self.transform(image)
@@ -116,36 +130,36 @@ plt.savefig('evaluation_metrics.png')
 
 
 # #pe asta fac analiza de overfitt
-# for epoch in range(EPOCHS):
-#     print(epoch)
-#     train_results_checkpoint = torch.load('checkpoints/model_checkpoint_epoch{}.pth'.format(epoch))
-#     model_overfitt = UNet()
-#     model_overfitt.load_state_dict(checkpoint['model_state_dict'])
-#     model_overfitt.eval()
-#     total_correct_test = 0
-#     total_test_samples = 0
+for epoch in range(EPOCHS):
+    print(epoch)
+    train_results_checkpoint = torch.load('checkpoints/model_checkpoint_epoch{}.pth'.format(epoch))
+    model_overfitt = UNet()
+    model_overfitt.load_state_dict(checkpoint['model_state_dict'])
+    model_overfitt.eval()
+    total_correct_test = 0
+    total_test_samples = 0
 
-#     with torch.no_grad():
-#         for inputs, labels in test_loader:
-#             outputs = model_overfitt(inputs)
-#             predicted = outputs > 0.5
-#             total_correct_test += (predicted == labels).sum().item()
-#             total_test_samples += labels.numel()
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            outputs = model_overfitt(inputs)
+            predicted = outputs > 0.5
+            total_correct_test += (predicted == labels).sum().item()
+            total_test_samples += labels.numel()
 
-#     test_accuracy = total_correct_test / total_test_samples
-#     test_accuracies.append(test_accuracy)
+    test_accuracy = total_correct_test / total_test_samples
+    test_accuracies.append(test_accuracy)
     
 
 
-# plt.figure(figsize=(10, 5))
-# print('test accuracies on epochs',test_accuracies)
-# plt.plot(train_accuracies, label='Train Accuracy', color='blue')
-# plt.plot(test_accuracies, label='Test Accuracy', color='red')
+plt.figure(figsize=(10, 5))
+print('test accuracies on epochs',test_accuracies)
+plt.plot(train_accuracies, label='Train Accuracy', color='blue')
+plt.plot(test_accuracies, label='Test Accuracy', color='red')
 
-# plt.xlabel('Epoch')
-# plt.ylabel('Accuracy')
-# plt.title('Train and Test Accuracy per Epoch')
-# plt.legend()
-# plt.grid(True)
-# plt.tight_layout()
-# plt.savefig('train_and_test_accuracies.png')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Train and Test Accuracy per Epoch')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig('train_and_test_accuracies.png')
