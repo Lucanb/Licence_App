@@ -49,8 +49,8 @@ class CustomDataset(Dataset):
         return len(self.ids)
 
     def __getitem__(self, idx):
-        image = Image.open('images/ISIC_00{}.jpg'.format(self.ids[idx]))
-        mask = Image.open('dataset/masks/img/ISIC_00{}_segmentation.png'.format(self.ids[idx]))
+        image = Image.open('dataset/img1/ISIC_00{}.jpg'.format(self.ids[idx]))
+        mask = Image.open('dataset/mask1/ISIC_00{}_segmentation.png'.format(self.ids[idx]))
         if self.transform:
             image = self.transform(image)
             mask = transforms.Resize((128, 128))(mask)
@@ -70,22 +70,8 @@ test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
-        # self.encoder = nn.Sequential(
-        #     nn.Conv2d(3, 64, kernel_size=3, padding=1),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
-        #     nn.ReLU(inplace=True),
-        #     nn.MaxPool2d(kernel_size=2, stride=2)
-        # )
-        # self.decoder = nn.Sequential(
-        #     nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(64, 1, kernel_size=3, padding=1),
-        #     nn.Sigmoid()
-        # )
-
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
@@ -98,6 +84,19 @@ class UNet(nn.Module):
             nn.Sigmoid()
         )
 
+        # self.encoder = nn.Sequential(
+        #     nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.MaxPool2d(kernel_size=2, stride=2)
+        # )
+        # self.decoder = nn.Sequential(
+        #     nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 1, kernel_size=3, padding=1),
+        #     nn.Sigmoid()
+        # )
     def forward(self, x):
         x1 = self.encoder(x)
         x2 = self.decoder(x1)
