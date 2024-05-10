@@ -5,6 +5,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import matplotlib.pyplot as plt
+import os
 import random
 
 EPOCHS = 50
@@ -41,6 +42,7 @@ class UNet(nn.Module):
         #     nn.Sigmoid()
         # )
 
+
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
             nn.ReLU(inplace=True),
@@ -60,6 +62,7 @@ class UNet(nn.Module):
         x2 = self.decoder(x1)
         return x2
 
+
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor(),
@@ -74,13 +77,29 @@ class CustomDataset(Dataset):
         return len(self.ids)
 
     def __getitem__(self, idx):
-        image = Image.open('dataset/images/ISIC_00{}.jpg'.format(self.ids[idx])).convert('L') #convert ca sa le facem grayscale
-        mask = Image.open('dataset/masks/img/ISIC_00{}_segmentation.png'.format(self.ids[idx]))
+        image, mask = self.load_image_and_mask(idx)
         if self.transform:
             image = self.transform(image)
             mask = transforms.Resize((128, 128))(mask)
             mask = transforms.ToTensor()(mask)
         return image, mask
+
+    def load_image_and_mask(self, idx):
+        max_attempts = len(self.ids)
+        attempts = 0
+
+        while attempts < max_attempts:
+            img_path = 'dataset/costica/img1/ISIC_00{}.jpg'.format(self.ids[idx])
+            mask_path = 'dataset/mask1/ISIC_00{}_segmentation.png'.format(self.ids[idx])
+
+            if os.path.exists(img_path) and os.path.exists(mask_path):
+                image = Image.open(img_path)
+                mask = Image.open(mask_path)
+                return image, mask
+            idx = (idx + 1) % len(self.ids)  # Move to the next index, wrap around if necessary
+            attempts += 1
+
+        raise RuntimeError("No valid images found in dataset after {} attempts.".format(max_attempts))
 
 TEST_SIZE = 3000
 BATCH_SIZE = 64
@@ -116,6 +135,7 @@ with torch.no_grad():
         jaccard_indexes.append(jaccard_index(predicted, labels))
         dice_coefficients.append(dice_coefficient(predicted, labels))
 
+        # Calculăm și stocăm rezultatele pentru fiecare batch în 'batches'
         batches = range(1, len(pixel_accuracies) + 1)
 
 plt.plot(batches, pixel_accuracies, label='Pixel Accuracy')
@@ -149,7 +169,9 @@ for epoch in range(EPOCHS):
     test_accuracy = total_correct_test / total_test_samples
     test_accuracies.append(test_accuracy)
     
-
+# test = test_accuracies[0]    
+# for epoch in range(49):
+#     test_accuracies.append(test)
 
 plt.figure(figsize=(10, 5))
 print('test accuracies on epochs',test_accuracies)
@@ -162,4 +184,4 @@ plt.title('Train and Test Accuracy per Epoch')
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig('train_and_test_accuracies.png')
+plt.savefig('train_and_test_accuracies_normalImg.png')

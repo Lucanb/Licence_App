@@ -116,10 +116,29 @@ def preprocess_images_in_folder(input_folder, output_folder):
         print(f"Processed and saved: {output_path}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python script.py <path_to_input_images_folder> <path_to_output_images_folder>")
-        sys.exit(1)
+
+    img = cv2.imread('/home/lolluckestar/Desktop/Licence_App/dataset/img1/ISIC_0024306.jpg', 0)
+
+    if (img is None):
+        # print ("Cannot open {} image".format(argv[0]))
+        print ("Make sure you provide the correct image path")
+        sys.exit(2)
+
+    # Perform segmentation using watershed_segmentation on the input image
+    segmented_image = watershed_segmentation(img)
+
+    # Save the segmented image as png to disk
+    cv2.imwrite("test/target.png", segmented_image)
+
+    # Show the segmented image and original image side by side
+    input_image = cv2.resize(img, (0,0), None, 0.5, 0.5)
+    seg_image = cv2.resize(cv2.imread("test/target.png", 0), (0,0), None, 0.5, 0.5)
+    numpy_horiz = numpy.hstack((input_image, seg_image))
+    cv2.imshow('Input image ------------------------ Segmented image', numpy_horiz)
+    cv2.waitKey(0)
+    #     print("Usage: python script.py <path_to_input_images_folder> <path_to_output_images_folder>")
+    #     sys.exit(1)
     
-    input_folder_path = sys.argv[1]
-    output_folder_path = sys.argv[2]
-    preprocess_images_in_folder(input_folder_path, output_folder_path)
+    # input_folder_path = sys.argv[1]
+    # output_folder_path = sys.argv[2]
+    # preprocess_images_in_folder(input_folder_path, output_folder_path)

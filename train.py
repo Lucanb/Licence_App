@@ -49,13 +49,29 @@ class CustomDataset(Dataset):
         return len(self.ids)
 
     def __getitem__(self, idx):
-        image = Image.open('dataset/img1/ISIC_00{}.jpg'.format(self.ids[idx]))
-        mask = Image.open('dataset/mask1/ISIC_00{}_segmentation.png'.format(self.ids[idx]))
+        image, mask = self.load_image_and_mask(idx)
         if self.transform:
             image = self.transform(image)
             mask = transforms.Resize((128, 128))(mask)
             mask = transforms.ToTensor()(mask)
         return image, mask
+
+    def load_image_and_mask(self, idx):
+        max_attempts = len(self.ids)
+        attempts = 0
+
+        while attempts < max_attempts:
+            img_path = 'dataset/costica/img1/ISIC_00{}.jpg'.format(self.ids[idx])
+            mask_path = 'dataset/mask1/ISIC_00{}_segmentation.png'.format(self.ids[idx])
+
+            if os.path.exists(img_path) and os.path.exists(mask_path):
+                image = Image.open(img_path)
+                mask = Image.open(mask_path)
+                return image, mask
+            idx = (idx + 1) % len(self.ids)  # Move to the next index, wrap around if necessary
+            attempts += 1
+
+        raise RuntimeError("No valid images found in dataset after {} attempts.".format(max_attempts))
 
 dataset_ids = random.sample(range(24306, 34321), TRAIN_SIZE + TEST_SIZE)
 train_dataset_ids = dataset_ids[:TRAIN_SIZE]
@@ -70,22 +86,8 @@ test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 1, kernel_size=3, padding=1),
-            nn.Sigmoid()
-        )
-
         # self.encoder = nn.Sequential(
-        #     nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
+        #     nn.Conv2d(3, 64, kernel_size=3, padding=1),
         #     nn.ReLU(inplace=True),
         #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
         #     nn.ReLU(inplace=True),
@@ -97,6 +99,20 @@ class UNet(nn.Module):
         #     nn.Conv2d(64, 1, kernel_size=3, padding=1),
         #     nn.Sigmoid()
         # )
+
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),  # Modificat de la 3 la 1 canal
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 1, kernel_size=3, padding=1),
+            nn.Sigmoid()
+        )
     def forward(self, x):
         x1 = self.encoder(x)
         x2 = self.decoder(x1)
