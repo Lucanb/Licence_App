@@ -2,3 +2,10 @@ env/
 dataset/
 images/
 img1/
+simultaneously/
+test_30_Licence/env
+test_30_Licence/env/archive
+First U-Net/costica-segimg
+checkpoints/
+First U-Net/checkpoints/
+test_30_Licence/checkpoints/
